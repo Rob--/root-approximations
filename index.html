@@ -9,11 +9,11 @@
 
     <div class="section" style="background-image: linear-gradient(120deg, #155799, #159957); box-shadow: 0px 0px 10px 0px black">
         <div class="flex">
-            <div class="flex-item waves-effect card-panel hoverable grey lighten-5 z-depth-1">
+            <div class="flex-item card-panel hoverable grey lighten-5 z-depth-1">
                 <div class="row">
                     <div class="input-field col s12">
                         <input id="nd" type="text" class="validate">
-                        <label for="nd">Decimal places to approximate to</label>
+                        <label for="nd">Decimal places to approximate the root to</label>
                     </div>
                 </div>
                 <div class="row">
@@ -33,7 +33,7 @@
                 </div>
             </div>
 
-            <div class="flex-item waves-effect card-panel hoverable grey lighten-5 z-depth-1">
+            <div class="flex-item card-panel hoverable grey lighten-5 z-depth-1">
                 <div class="row">
                     <div class="input-field col s12">
                         <input id="l1" type="text" class="validate">
@@ -55,6 +55,10 @@
 
 
     <style>
+        .row {
+            margin-bottom: 0px;
+        }
+
         .flex {
             display: flex;
             flex-direction: row;
@@ -108,24 +112,24 @@
     <script>
 
         function help(){
-            console.clear();
-            console.log('d: number of decimal places of accuracy before stopping');
-            console.log('i: interval between root guesses in milliseconds');
-            console.log('g: initial guess to start off at (x coordinate)');
-            console.debug('useNewtonRaphson(d, i, g)');
-            console.warn('');
-            console.log('x1: first x coordinate (left side of root)');
-            console.log('x2: second x coordinate (right side of root)');
-            console.debug('useLI(x1, x2)');
+            console.clear()
+            console.log('d: number of decimal places of accuracy before stopping')
+            console.log('i: interval between root guesses in milliseconds')
+            console.log('g: initial guess to start off at (x coordinate)')
+            console.debug('useNewtonRaphson(d, i, g)')
+            console.warn('')
+            console.log('x1: first x coordinate (left side of root)')
+            console.log('x2: second x coordinate (right side of root)')
+            console.debug('useLI(x1, x2)')
         }
-        help();
+        help()
 
         // newton example:  var e = "y = x^2"
         // li example: var e = "y = 0.1x^2 - 5"
-        var e = "y = 0.1x^2 - 5";
-        var decimalPlaces = 3;
-        var interval = 2000;
-        var guess = 5;
+        var e = "y = 0.1x^2 - 5"
+        var decimalPlaces = 3
+        var interval = 2000
+        var guess = 5
 
         var elt = document.getElementById('calculator');
         var calculator = Desmos.Calculator(elt);
@@ -134,12 +138,12 @@
 
         function useNewtonRaphson(){
             var latex = calculator.getState().expressions.list[0].latex;
-            calculator.setBlank();
-            calculator.setExpression({id: 'main', latex: latex});
+            calculator.setBlank()
+            calculator.setExpression({id: 'main', latex: latex})
 
-            decimalPlaces = $('#nd').val();
-            interval = $('#ni').val();
-            guess = $('#ng').val();
+            decimalPlaces = $('#nd').val()
+            interval = $('#ni').val()
+            guess = $('#ng').val()
 
             if(decimalPlaces && interval && guess) nextRaphson()
         }
@@ -147,28 +151,42 @@
         function useLI(a, b){
             var latex = calculator.getState().expressions.list[0].latex;
             calculator.setBlank()
-            calculator.setExpression({id: 'main', latex: latex});
+            calculator.setExpression({id: 'main', latex: latex})
 
-            y1 = f(x1 = $('#l1').val());
-            y2 = f(x2 = $('#l2').val());
-            n = 0;
+            y1 = f(x1 = $('#l1').val())
+            y2 = f(x2 = $('#l2').val())
+            n = 0
 
             nextLI()
         }
 
         function f(x){
-            var latex = calculator.getState().expressions.list[0].latex.split('=')[1];
-            return Evaluatex.evaluate(latex, { x: x }, { latex: true });
+            var latex = calculator.getState().expressions.list[0].latex;
+
+            var matches = latex.match(/{\d+\\space}/g);
+
+            if (matches) {
+              matches.forEach(function(match) {
+                var number = match.substr(1).split("\\space")[0];
+                latex = latex.replace(match, number);
+              });
+            }
+
+            latex = latex.replace(/\\space/g, '').split('=')[1];
+
+            console.log(latex);
+
+            return Evaluatex.evaluate(latex, { x: x }, { latex: true })
         }
 
         function f_(x){
             // f'(x) = ( f(x + h) - f(x) ) / h
-            var h = 0.0000001;
-            return ( f(x + h) - f(x) ) / h;
+            var h = 0.0000001
+            return ( f(x + h) - f(x) ) / h
         }
 
         function raphson(x){
-            return x - (f(x) / f_(x));
+            return x - (f(x) / f_(x))
         }
 
         // f(x) = 0
@@ -177,77 +195,78 @@
         //nextRaphson()
         function nextRaphson(){
             // y value of guessed root
-            var y = f(guess);
+            var y = f(guess)
 
             // gradient at guessed root
-            var m = f_(guess);
+            var m = f_(guess)
 
             // tangent: y = mx + c
-            var t = m + '*' + guess + '+ c';
+            var t = m + '*' + guess + '+ c'
 
             // solve for c
             try {
-                var tangent = new algebra.Equation(new algebra.parse(t), new algebra.Expression(Number(y).toFixed(20)));
+                var tangent = new algebra.Equation(new algebra.parse(t), new algebra.Expression(Number(y).toFixed(20)))
             } catch(e){
-                Materialize.toast('Error, root is probably imaginary');
-                return console.log('error, root is probably imaginary');
+                Materialize.toast('Error, root is probably imaginary', 15000);
+                return console.log('error, root is probably imaginary')
             }
-            var c = tangent.solveFor('c').toString();
+            var c = tangent.solveFor('c').toString()
 
             // eval because output is a mathematical expression
-            var finalTangent = 'y = ' + m + '*x' + '+ (' + eval(c) + ')';
+            var finalTangent = 'y = ' + m + '*x' + '+ (' + eval(c) + ')'
 
             // draw on tangent
-            calculator.setExpression({id:'linear' + guess, latex: finalTangent});
+            calculator.setExpression({id:'linear' + guess, latex: finalTangent})
 
             // guess a better root
-            guess = raphson(guess);
+            guess = raphson(guess)
 
             // if we have enough accuracy then stop
-            console.log('New estimated root: (' + guess + ', ' + f(guess) + ')');
+            console.log('New estimated root: (' + guess + ', ' + f(guess) + ')')
             if(Math.abs(f(guess)) > Math.pow(decimalPlaces, -4)) {
-              setTimeout(nextRaphson, interval);
+              setTimeout(nextRaphson, interval)
             } else {
               console.log('Finished newton raphson, root is: (' + guess + ', ' + f(guess) + ')');
+              Materialize.toast('finished newton raphson, approximate root is: ' + guess, 15000);
             }
         }
 
-        var x1 = 2.5, y1 = f(x1);
-        var x2 = 25, y2 = f(x2);
-        var n = 0;
+        var x1 = 2.5, y1 = f(x1)
+        var x2 = 25, y2 = f(x2)
+        var n = 0
 
         //nextLI()
         function nextLI(){
             // get gradient of line between two x points
-            var m = (y2 - y1) / (x2 - x1);
+            var m = (y2 - y1) / (x2 - x1)
 
             // form the equation y = m(x - x1) + y1
-            var eq = 'y  = ' + y1 + ' + ' + m + '(x - ' + x1 + ')';
+            var eq = 'y  = ' + y1 + ' + ' + m + '(x - ' + x1 + ')'
 
             // print values
             console.table({
-                x1: { value: x1 },
-                x2: { value: x2 },
-                y1: { value: y1 },
-                y2: { value: y2 },
-                m:  { value: m },
-            });
+                x1: {value: x1},
+                x2: {value: x2},
+                y1: {value: y1},
+                y2: {value: y2},
+                m:  {value: m}
+            })
 
             // graph the equation
-            calculator.setExpression({id:'linear' + n++, latex: eq});
+            calculator.setExpression({id:'linear' + n++, latex: eq})
 
             // solve x for when y = 0
-            var equation = new algebra.Equation(algebra.parse(eq.split('=')[1]), 0);
+            var equation = new algebra.Equation(algebra.parse(eq.split('=')[1]), 0)
 
             // eval because output is a mathematical expression
-            x1 = eval(equation.solveFor('x').toString());
+            x1 = eval(equation.solveFor('x').toString())
 
             // new value of new estimated root
-            y1 = f(x1);
+            y1 = f(x1)
 
             // if we have enough accuracy then stop
-            console.log('New estimated root: ', x1);
-            if(Math.abs(f(x1)) > Math.pow(2, -decimalPlaces)) setTimeout(nextLI, interval);
+            console.log('New estimated root: ', x1)
+            if(Math.abs(f(x1)) > Math.pow(2, -decimalPlaces)) setTimeout(nextLI, interval)
         }
     </script>
 </body>
